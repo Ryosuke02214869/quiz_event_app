@@ -1,0 +1,240 @@
+/* Apple Design System - Custom Blue Theme */
+
+:root {
+  /* プライマリーカラー */
+  --primary-blue: #0ea5e9;
+  --secondary-blue: #38bdf8;
+  --dark-blue: #0284c7;
+  --accent-cyan: #06b6d4;
+  --accent-teal: #14b8a6;
+
+  /* 背景色 */
+  --bg-primary: #0ea5e9;
+  --bg-secondary: #00fffa;
+  --bg-tertiary: #f0f9ff;
+  --bg-card: rgba(255, 255, 255, 0.9);
+  --bg-elevated: rgba(255, 255, 255, 0.95);
+  --bg-overlay: rgba(0, 0, 0, 0.5);
+
+  /* Text Colors */
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --text-quaternary: #a1a1a6;
+  --text-inverse: #ffffff;
+
+  /* Borders & Separators */
+  --border-primary: #bae6fd;
+  --border-secondary: #e0f2fe;
+  --border-tertiary: #f0f9ff;
+  --border-focus: #0ea5e9;
+
+  /* Interactive Colors */
+  --interactive-primary: #0ea5e9;
+  --interactive-hover: #38bdf8;
+  --interactive-active: #0284c7;
+  --interactive-disabled: #e0f2fe;
+
+  /* Semantic Colors - Success (青系に統一) */
+  --success-bg: #cffafe;
+  --success-border: #14b8a6;
+  --success-text: #0d9488;
+
+  /* Semantic Colors - Warning (青系に統一) */
+  --warning-bg: #e0f2fe;
+  --warning-border: #38bdf8;
+  --warning-text: #0284c7;
+
+  /* Semantic Colors - Error (青系に統一) */
+  --error-bg: #dbeafe;
+  --error-border: #0284c7;
+  --error-text: #075985;
+
+  /* Semantic Colors - Info (青系に統一) */
+  --info-bg: #f0f9ff;
+  --info-border: #38bdf8;
+  --info-text: #0ea5e9;
+
+  /* Typography */
+  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  --font-text: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  --font-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Courier New', monospace;
+
+  /* Font Sizes - Display */
+  --text-display-lg: 56px;
+  --text-display-md: 48px;
+  --text-display-sm: 40px;
+
+  /* Font Sizes - Heading */
+  --text-h1: 32px;
+  --text-h2: 28px;
+  --text-h3: 24px;
+  --text-h4: 21px;
+  --text-h5: 19px;
+  --text-h6: 17px;
+
+  /* Font Sizes - Body */
+  --text-body-xl: 21px;
+  --text-body-lg: 19px;
+  --text-body: 17px;
+  --text-body-sm: 15px;
+  --text-body-xs: 14px;
+
+  /* Font Sizes - Utility */
+  --text-caption: 12px;
+  --text-overline: 11px;
+
+  /* Font Weights */
+  --font-light: 300;
+  --font-regular: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  /* Line Heights */
+  --leading-tight: 1.2;
+  --leading-snug: 1.375;
+  --leading-normal: 1.47059;
+  --leading-relaxed: 1.6;
+
+  /* Spacing Scale */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 20px;
+  --space-2xl: 24px;
+  --space-3xl: 32px;
+  --space-4xl: 40px;
+  --space-5xl: 48px;
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 12px 40px rgba(0, 0, 0, 0.18);
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Base Reset & Typography */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-text);
+  font-size: var(--text-body);
+  line-height: var(--leading-normal);
+  color: var(--text-primary);
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+  min-height: 100vh;
+}
+
+/* Typography Utilities */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: var(--font-semibold);
+  line-height: var(--leading-tight);
+  color: var(--text-primary);
+}
+
+h1 { font-size: var(--text-h1); }
+h2 { font-size: var(--text-h2); }
+h3 { font-size: var(--text-h3); }
+h4 { font-size: var(--text-h4); }
+h5 { font-size: var(--text-h5); }
+h6 { font-size: var(--text-h6); }
+
+p {
+  line-height: var(--leading-normal);
+  margin-bottom: var(--space-lg);
+}
+
+/* Button Base Styles */
+button {
+  font-family: var(--font-text);
+  font-size: var(--text-body);
+  font-weight: var(--font-medium);
+  line-height: var(--leading-snug);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: none;
+  outline: none;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* Input Base Styles */
+input, textarea, select {
+  font-family: var(--font-text);
+  font-size: var(--text-body);
+  line-height: var(--leading-normal);
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
+}
+
+/* Card Styles */
+.card {
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-secondary);
+  transition: all var(--transition-base);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  border-color: var(--border-primary);
+}
+
+/* Utility Classes */
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.text-tertiary {
+  color: var(--text-tertiary);
+}
+
+.font-semibold {
+  font-weight: var(--font-semibold);
+}
+
+.font-medium {
+  font-weight: var(--font-medium);
+}
