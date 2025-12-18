@@ -73,7 +73,7 @@ const handleImageUpload = async (event: Event, type: 'question' | 'option', inde
     const result = e.target?.result as string
     if (type === 'question') {
       form.images.push(result)
-    } else if (type === 'option' && index !== undefined) {
+    } else if (type === 'option' && index !== undefined && form.options[index]) {
       form.options[index].image = result
     }
   }
@@ -88,7 +88,9 @@ const removeQuestionImage = (index: number) => {
 }
 
 const removeOptionImage = (index: number) => {
-  form.options[index].image = null
+  if (form.options[index]) {
+    form.options[index].image = null
+  }
 }
 
 const handleSubmit = async () => {
@@ -96,8 +98,15 @@ const handleSubmit = async () => {
     alert('問題文を入力してください')
     return
   }
-  if (form.options.some(opt => !opt.text.trim())) {
-    alert('すべての選択肢を入力してください')
+  // 選択肢1と2は必須
+  if (!form.options[0]?.text.trim() || !form.options[1]?.text.trim()) {
+    alert('選択肢1と2は必須です')
+    return
+  }
+  // 入力された選択肢が2つ以上必要
+  const filledOptions = form.options.filter(opt => opt.text.trim())
+  if (filledOptions.length < 2) {
+    alert('最低2つの選択肢を入力してください')
     return
   }
 
@@ -111,6 +120,7 @@ const handleSubmit = async () => {
     const uploadedImages: string[] = []
     for (let i = 0; i < form.images.length; i++) {
       const imageData = form.images[i]
+      if (!imageData) continue
 
       // DataURLの場合はアップロード対象
       if (imageData.startsWith('data:')) {
@@ -125,10 +135,17 @@ const handleSubmit = async () => {
       }
     }
 
-    // 選択肢の画像をアップロード
+    // 選択肢の画像をアップロード（空の選択肢は除外）
     const uploadedOptions: QuestionOption[] = []
     for (let i = 0; i < form.options.length; i++) {
       const option = form.options[i]
+      if (!option) continue
+
+      // 空の選択肢はスキップ
+      if (!option.text.trim()) {
+        continue
+      }
+
       let imageUrl = option.image
 
       if (imageUrl && imageUrl.startsWith('data:')) {
@@ -230,13 +247,13 @@ const handleSubmit = async () => {
             v-model="form.correctAnswer"
           >
           <label :for="`correct-${index}`" class="correct-label">
-            選択肢 {{ index + 1 }} (正解)
+            選択肢 {{ index + 1 }} {{ index < 2 ? '(必須)' : '(任意)' }}
           </label>
         </div>
         <input
           v-model="option.text"
           type="text"
-          :placeholder="`選択肢${index + 1}のテキスト`"
+          :placeholder="`選択肢${index + 1}のテキスト${index < 2 ? '（必須）' : '（任意）'}`"
           class="option-text"
         >
         <div class="option-image">

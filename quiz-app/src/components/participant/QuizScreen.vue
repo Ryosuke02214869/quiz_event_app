@@ -100,6 +100,8 @@ const submitAnswer = async () => {
 
   try {
     const question = currentQuestion.value
+    if (!question) return
+
     await saveResponse(
       userId.value,
       question.id,
@@ -138,43 +140,48 @@ const toggleHistory = () => {
 
 <template>
   <div class="quiz-screen">
-    <!-- プログレスバー -->
-    <div class="progress-bar">
-      <div class="progress-fill" :style="{ width: progress + '%' }"></div>
+    <div v-if="loading" class="loading-state">
+      <p>読み込み中...</p>
     </div>
 
-    <!-- 問題ナンバー -->
-    <div class="question-header">
-      <div class="question-number">
-        問題 {{ currentQuestionIndex + 1 }} / {{ totalQuestions }}
-      </div>
-      <button class="history-button" @click="toggleHistory">
-        📋 履歴
-      </button>
-    </div>
-
-    <!-- 問題カード -->
-    <div class="question-card">
-      <!-- 問題文 -->
-      <div class="question-text">
-        {{ currentQuestion.text }}
+    <template v-else-if="currentQuestion">
+      <!-- プログレスバー -->
+      <div class="progress-bar">
+        <div class="progress-fill" :style="{ width: progress + '%' }"></div>
       </div>
 
-      <!-- 問題画像 -->
-      <div v-if="currentQuestion.images.length > 0" class="question-images">
-        <img
-          v-for="(image, index) in currentQuestion.images"
-          :key="index"
-          :src="image"
-          alt="問題画像"
-          class="question-image"
-        >
+      <!-- 問題ナンバー -->
+      <div class="question-header">
+        <div class="question-number">
+          問題 {{ currentQuestionIndex + 1 }} / {{ totalQuestions }}
+        </div>
+        <button class="history-button" @click="toggleHistory">
+          📋 履歴
+        </button>
       </div>
 
-      <!-- 選択肢 -->
-      <div class="options-container">
-        <button
-          v-for="(option, index) in currentQuestion.options"
+      <!-- 問題カード -->
+      <div class="question-card">
+        <!-- 問題文 -->
+        <div class="question-text">
+          {{ currentQuestion.text }}
+        </div>
+
+        <!-- 問題画像 -->
+        <div v-if="currentQuestion.images.length > 0" class="question-images">
+          <img
+            v-for="(image, index) in currentQuestion.images"
+            :key="index"
+            :src="image"
+            alt="問題画像"
+            class="question-image"
+          >
+        </div>
+
+        <!-- 選択肢 -->
+        <div class="options-container">
+          <button
+            v-for="(option, index) in currentQuestion.options"
           :key="index"
           class="option-button"
           :class="{
@@ -220,7 +227,7 @@ const toggleHistory = () => {
         <h3>回答を確定しますか？</h3>
         <p class="modal-message">
           選択した回答:
-          <strong>{{ String.fromCharCode(65 + (selectedAnswer ?? 0)) }}. {{ currentQuestion.options[selectedAnswer ?? 0].text }}</strong>
+          <strong>{{ String.fromCharCode(65 + (selectedAnswer ?? 0)) }}. {{ currentQuestion?.options[selectedAnswer ?? 0]?.text }}</strong>
         </p>
         <p class="modal-warning">※確定後は変更できません</p>
         <div class="modal-buttons">
@@ -235,17 +242,18 @@ const toggleHistory = () => {
     </div>
 
     <!-- 履歴モーダル -->
-    <div v-if="showHistoryModal" class="modal-overlay" @click="showHistoryModal = false">
-      <div class="modal-content history-modal" @click.stop>
-        <h3>回答履歴</h3>
-        <div class="history-empty">
-          まだ回答がありません
+      <div v-if="showHistoryModal" class="modal-overlay" @click="showHistoryModal = false">
+        <div class="modal-content history-modal" @click.stop>
+          <h3>回答履歴</h3>
+          <div class="history-empty">
+            まだ回答がありません
+          </div>
+          <button class="btn-close" @click="showHistoryModal = false">
+            閉じる
+          </button>
         </div>
-        <button class="btn-close" @click="showHistoryModal = false">
-          閉じる
-        </button>
       </div>
-    </div>
+    </template>
   </div>
 </template>
 

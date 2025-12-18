@@ -80,8 +80,19 @@ const deleteUser = async (user: User) => {
   }
 }
 
+const getOrigin = () => {
+  if (typeof window !== 'undefined') {
+    return window.location.origin
+  }
+  return ''
+}
+
+const getUserUrl = (userName: string) => {
+  return `${getOrigin()}?user=${encodeURIComponent(userName)}`
+}
+
 const copyUrl = (user: User) => {
-  const url = `${window.location.origin}?user=${encodeURIComponent(user.name)}`
+  const url = getUserUrl(user.name)
   navigator.clipboard.writeText(url).then(() => {
     alert('URLをコピーしました')
   }).catch(() => {
@@ -158,7 +169,7 @@ const copyUrl = (user: User) => {
             <div class="url-display">
               <input
                 type="text"
-                :value="`${window.location.origin}?user=${encodeURIComponent(user.name)}`"
+                :value="getUserUrl(user.name)"
                 readonly
               >
               <button

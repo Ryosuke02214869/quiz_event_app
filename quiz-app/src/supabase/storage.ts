@@ -66,6 +66,9 @@ export const deleteImage = async (url: string): Promise<void> => {
       throw new Error('無効な画像URLです。')
     }
     const filePath = pathParts[1]
+    if (!filePath) {
+      throw new Error('ファイルパスが取得できませんでした。')
+    }
 
     const { error } = await supabase.storage
       .from(BUCKET_NAME)

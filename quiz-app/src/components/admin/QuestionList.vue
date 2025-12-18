@@ -61,6 +61,7 @@ const moveUp = async (index: number) => {
     try {
       const current = questions.value[index]
       const previous = questions.value[index - 1]
+      if (!current || !previous) return
 
       // 順番を入れ替え
       await updateQuestion(current.id, { order: previous.order })
@@ -77,6 +78,7 @@ const moveDown = async (index: number) => {
     try {
       const current = questions.value[index]
       const next = questions.value[index + 1]
+      if (!current || !next) return
 
       // 順番を入れ替え
       await updateQuestion(current.id, { order: next.order })

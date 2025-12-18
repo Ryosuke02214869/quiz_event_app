@@ -48,16 +48,16 @@ onMounted(async () => {
     for (const question of activeQuestions) {
       const response = responses.find((r: any) => r.question_id === question.id)
       if (response) {
-        const isCorrect = response.is_correct
+        const isCorrect = (response as any).is_correct
         if (isCorrect) correctCount++
 
         answers.push({
           questionId: question.id,
           questionText: question.text,
-          selectedAnswer: response.selected_answer,
+          selectedAnswer: (response as any).selected_answer,
           correctAnswer: question.correctAnswer,
           isCorrect,
-          selectedOptionText: question.options[response.selected_answer]?.text || '',
+          selectedOptionText: question.options[(response as any).selected_answer]?.text || '',
           correctOptionText: question.options[question.correctAnswer]?.text || ''
         })
       }
