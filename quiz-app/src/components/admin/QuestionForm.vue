@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue'
 import type { Question, QuestionOption } from '../../types'
+import { createQuestion, updateQuestion, getQuestions } from '../../supabase/database'
+import { uploadImage, getQuestionImagePath, getOptionImagePath } from '../../supabase/storage'
+import { validateImage } from '../../utils/imageUtils'
 
 interface Props {
   question?: Question | null
@@ -25,6 +28,9 @@ const form = reactive({
   showCorrectAnswer: true
 })
 
+const uploading = ref(false)
+const uploadingFiles = ref<File[]>([])
+
 watch(() => props.question, (question) => {
   if (question) {
     form.text = question.text
@@ -32,24 +38,49 @@ watch(() => props.question, (question) => {
     form.options = [...question.options]
     form.correctAnswer = question.correctAnswer
     form.showCorrectAnswer = question.showCorrectAnswer
+  } else {
+    // 新規作成時はフォームをリセット
+    form.text = ''
+    form.images = []
+    form.options = [
+      { text: '', image: null },
+      { text: '', image: null },
+      { text: '', image: null },
+      { text: '', image: null }
+    ]
+    form.correctAnswer = 0
+    form.showCorrectAnswer = true
   }
 }, { immediate: true })
 
-const handleImageUpload = (event: Event, type: 'question' | 'option', index?: number) => {
+const handleImageUpload = async (event: Event, type: 'question' | 'option', index?: number) => {
   const target = event.target as HTMLInputElement
   const files = target.files
-  if (files && files[0]) {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const result = e.target?.result as string
-      if (type === 'question') {
-        form.images.push(result)
-      } else if (type === 'option' && index !== undefined) {
-        form.options[index].image = result
-      }
-    }
-    reader.readAsDataURL(files[0])
+  if (!files || !files[0]) return
+
+  const file = files[0]
+
+  // 画像検証
+  const validation = validateImage(file)
+  if (!validation.valid) {
+    alert(validation.error)
+    return
   }
+
+  // プレビュー用にDataURLを生成
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    const result = e.target?.result as string
+    if (type === 'question') {
+      form.images.push(result)
+    } else if (type === 'option' && index !== undefined) {
+      form.options[index].image = result
+    }
+  }
+  reader.readAsDataURL(file)
+
+  // アップロード用にファイルを保存
+  uploadingFiles.value.push(file)
 }
 
 const removeQuestionImage = (index: number) => {
@@ -60,7 +91,7 @@ const removeOptionImage = (index: number) => {
   form.options[index].image = null
 }
 
-const handleSubmit = () => {
+const handleSubmit = async () => {
   if (!form.text.trim()) {
     alert('問題文を入力してください')
     return
@@ -70,7 +101,88 @@ const handleSubmit = () => {
     return
   }
 
-  emit('save')
+  try {
+    uploading.value = true
+
+    // 問題IDを取得（新規作成時は仮IDを使用）
+    const questionId = props.question?.id || `temp-${Date.now()}`
+
+    // 画像をアップロード
+    const uploadedImages: string[] = []
+    for (let i = 0; i < form.images.length; i++) {
+      const imageData = form.images[i]
+
+      // DataURLの場合はアップロード対象
+      if (imageData.startsWith('data:')) {
+        const file = uploadingFiles.value.shift()
+        if (file) {
+          const url = await uploadImage(file, getQuestionImagePath(questionId))
+          uploadedImages.push(url)
+        }
+      } else {
+        // 既存のURLはそのまま使用
+        uploadedImages.push(imageData)
+      }
+    }
+
+    // 選択肢の画像をアップロード
+    const uploadedOptions: QuestionOption[] = []
+    for (let i = 0; i < form.options.length; i++) {
+      const option = form.options[i]
+      let imageUrl = option.image
+
+      if (imageUrl && imageUrl.startsWith('data:')) {
+        const file = uploadingFiles.value.shift()
+        if (file) {
+          imageUrl = await uploadImage(file, getOptionImagePath(questionId))
+        }
+      }
+
+      uploadedOptions.push({
+        text: option.text,
+        image: imageUrl
+      })
+    }
+
+    // 問題の順番を取得
+    let order = 1
+    if (!props.question) {
+      const questions = await getQuestions()
+      order = questions.length > 0 ? Math.max(...questions.map(q => q.order)) + 1 : 1
+    }
+
+    // データベースに保存
+    if (props.question) {
+      // 更新
+      await updateQuestion(props.question.id, {
+        text: form.text,
+        images: uploadedImages,
+        options: uploadedOptions,
+        correctAnswer: form.correctAnswer,
+        showCorrectAnswer: form.showCorrectAnswer
+      })
+    } else {
+      // 新規作成
+      await createQuestion({
+        order,
+        text: form.text,
+        images: uploadedImages,
+        options: uploadedOptions,
+        correctAnswer: form.correctAnswer,
+        showCorrectAnswer: form.showCorrectAnswer,
+        isActive: false,
+        isDeleted: false
+      })
+    }
+
+    uploadingFiles.value = []
+    emit('save')
+  } catch (error: any) {
+    console.error('Error saving question:', error)
+    alert(`エラーが発生しました: ${error.message}`)
+  } finally {
+    uploading.value = false
+  }
 }
 </script>
 

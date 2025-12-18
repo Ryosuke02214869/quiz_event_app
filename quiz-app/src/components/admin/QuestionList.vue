@@ -1,43 +1,105 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import type { Question } from '../../types'
+import { getQuestions, toggleQuestionActive, deleteQuestion as deleteQuestionDB, updateQuestion, subscribeToQuestions } from '../../supabase/database'
 
 const emit = defineEmits<{
   edit: [question: Question]
 }>()
 
 const questions = ref<Question[]>([])
+const loading = ref(true)
+const error = ref<string | null>(null)
 
-const toggleActive = (question: Question) => {
-  question.isActive = !question.isActive
+let unsubscribe: (() => void) | null = null
+
+onMounted(async () => {
+  try {
+    // 初回データ取得
+    questions.value = await getQuestions()
+
+    // リアルタイム購読
+    unsubscribe = subscribeToQuestions((updatedQuestions) => {
+      questions.value = updatedQuestions
+    })
+  } catch (e: any) {
+    error.value = e.message
+    console.error('Error loading questions:', e)
+  } finally {
+    loading.value = false
+  }
+})
+
+onUnmounted(() => {
+  if (unsubscribe) {
+    unsubscribe()
+  }
+})
+
+const toggleActive = async (question: Question) => {
+  try {
+    await toggleQuestionActive(question.id, !question.isActive)
+  } catch (e: any) {
+    alert(`エラー: ${e.message}`)
+    console.error('Error toggling question:', e)
+  }
 }
 
-const deleteQuestion = (question: Question) => {
+const deleteQuestion = async (question: Question) => {
   if (confirm('この問題を削除してもよろしいですか?')) {
-    question.isDeleted = true
+    try {
+      await deleteQuestionDB(question.id)
+    } catch (e: any) {
+      alert(`エラー: ${e.message}`)
+      console.error('Error deleting question:', e)
+    }
   }
 }
 
-const moveUp = (index: number) => {
+const moveUp = async (index: number) => {
   if (index > 0) {
-    const temp = questions.value[index]
-    questions.value[index] = questions.value[index - 1]
-    questions.value[index - 1] = temp
+    try {
+      const current = questions.value[index]
+      const previous = questions.value[index - 1]
+
+      // 順番を入れ替え
+      await updateQuestion(current.id, { order: previous.order })
+      await updateQuestion(previous.id, { order: current.order })
+    } catch (e: any) {
+      alert(`エラー: ${e.message}`)
+      console.error('Error moving question:', e)
+    }
   }
 }
 
-const moveDown = (index: number) => {
+const moveDown = async (index: number) => {
   if (index < questions.value.length - 1) {
-    const temp = questions.value[index]
-    questions.value[index] = questions.value[index + 1]
-    questions.value[index + 1] = temp
+    try {
+      const current = questions.value[index]
+      const next = questions.value[index + 1]
+
+      // 順番を入れ替え
+      await updateQuestion(current.id, { order: next.order })
+      await updateQuestion(next.id, { order: current.order })
+    } catch (e: any) {
+      alert(`エラー: ${e.message}`)
+      console.error('Error moving question:', e)
+    }
   }
 }
 </script>
 
 <template>
   <div class="question-list">
-    <div v-if="questions.length === 0" class="empty-state">
+    <div v-if="loading" class="loading-state">
+      <p>読み込み中...</p>
+    </div>
+
+    <div v-else-if="error" class="error-state">
+      <p>エラーが発生しました: {{ error }}</p>
+    </div>
+
+    <div v-else-if="questions.length === 0" class="empty-state">
       <p>まだ問題が作成されていません</p>
       <p class="help-text">「新規作成」ボタンから問題を作成してください</p>
     </div>
@@ -125,9 +187,24 @@ const moveDown = (index: number) => {
   margin-top: 2rem;
 }
 
+.loading-state,
+.error-state,
 .empty-state {
   text-align: center;
   padding: 3rem;
+}
+
+.loading-state {
+  color: var(--text-secondary);
+}
+
+.error-state {
+  color: var(--error-text);
+  background: var(--error-bg);
+  border-radius: var(--radius-lg);
+}
+
+.empty-state {
   color: #999;
 }
 

@@ -1,32 +1,82 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import type { User } from '../../types'
+import {
+  createUser,
+  getUsers,
+  getUserByName,
+  deleteUser as deleteUserDB,
+  subscribeToUsers
+} from '../../supabase/database'
 
 const users = ref<User[]>([])
+const loading = ref(true)
 const newUserName = ref('')
 const showAddForm = ref(false)
+const adding = ref(false)
 
-const addUser = () => {
+let unsubscribe: (() => void) | null = null
+
+onMounted(async () => {
+  try {
+    // 初回データ取得
+    users.value = await getUsers()
+
+    // リアルタイム購読
+    unsubscribe = subscribeToUsers((updatedUsers) => {
+      users.value = updatedUsers
+    })
+  } catch (e: any) {
+    console.error('Error loading users:', e)
+    alert(`エラー: ${e.message}`)
+  } finally {
+    loading.value = false
+  }
+})
+
+onUnmounted(() => {
+  if (unsubscribe) unsubscribe()
+})
+
+const activeUsers = computed(() => {
+  return users.value.filter(u => !u.isDeleted)
+})
+
+const addUser = async () => {
   if (!newUserName.value.trim()) {
     alert('回答者名を入力してください')
     return
   }
 
-  const newUser: User = {
-    id: `user_${Date.now()}`,
-    name: newUserName.value.trim(),
-    isDeleted: false,
-    createdAt: new Date().toISOString()
-  }
+  try {
+    adding.value = true
 
-  users.value.push(newUser)
-  newUserName.value = ''
-  showAddForm.value = false
+    // 重複チェック
+    const existing = await getUserByName(newUserName.value.trim())
+    if (existing) {
+      alert('同じ名前の回答者が既に存在します')
+      return
+    }
+
+    await createUser(newUserName.value.trim())
+    newUserName.value = ''
+    showAddForm.value = false
+  } catch (e: any) {
+    console.error('Error adding user:', e)
+    alert(`エラー: ${e.message}`)
+  } finally {
+    adding.value = false
+  }
 }
 
-const deleteUser = (user: User) => {
+const deleteUser = async (user: User) => {
   if (confirm(`${user.name} さんを削除してもよろしいですか？`)) {
-    user.isDeleted = true
+    try {
+      await deleteUserDB(user.id)
+    } catch (e: any) {
+      console.error('Error deleting user:', e)
+      alert(`エラー: ${e.message}`)
+    }
   }
 }
 
@@ -38,46 +88,50 @@ const copyUrl = (user: User) => {
     alert('URLのコピーに失敗しました')
   })
 }
-
-const activeUsers = ref(users.value.filter(u => !u.isDeleted))
 </script>
 
 <template>
   <div class="user-management">
-    <div class="header">
-      <div>
-        <h2>回答者管理</h2>
-        <p class="subtitle">回答者の追加とURLの発行</p>
-      </div>
-      <button
-        class="btn-add"
-        @click="showAddForm = !showAddForm"
-      >
-        {{ showAddForm ? 'キャンセル' : '回答者を追加' }}
-      </button>
+    <div v-if="loading" class="loading-state">
+      <p>読み込み中...</p>
     </div>
 
-    <div v-if="showAddForm" class="add-form">
-      <div class="form-group">
-        <label>回答者名</label>
-        <div class="input-group">
-          <input
-            v-model="newUserName"
-            type="text"
-            placeholder="例: 山田太郎"
-            @keyup.enter="addUser"
-          >
-          <button class="btn-primary" @click="addUser">
-            追加
-          </button>
+    <template v-else>
+      <div class="header">
+        <div>
+          <h2>回答者管理</h2>
+          <p class="subtitle">回答者の追加とURLの発行</p>
         </div>
-        <p class="help-text">
-          追加後、その回答者専用のURLが生成されます
-        </p>
+        <button
+          class="btn-add"
+          @click="showAddForm = !showAddForm"
+        >
+          {{ showAddForm ? 'キャンセル' : '回答者を追加' }}
+        </button>
       </div>
-    </div>
 
-    <div class="users-section">
+      <div v-if="showAddForm" class="add-form">
+        <div class="form-group">
+          <label>回答者名</label>
+          <div class="input-group">
+            <input
+              v-model="newUserName"
+              type="text"
+              placeholder="例: 山田太郎"
+              @keyup.enter="addUser"
+              :disabled="adding"
+            >
+            <button class="btn-primary" @click="addUser" :disabled="adding">
+              {{ adding ? '追加中...' : '追加' }}
+            </button>
+          </div>
+          <p class="help-text">
+            追加後、その回答者専用のURLが生成されます
+          </p>
+        </div>
+      </div>
+
+      <div class="users-section">
       <div v-if="activeUsers.length === 0" class="empty-state">
         <p>まだ回答者が登録されていません</p>
         <p class="help-text">「回答者を追加」ボタンから回答者を登録してください</p>
@@ -128,15 +182,16 @@ const activeUsers = ref(users.value.filter(u => !u.isDeleted))
       </div>
     </div>
 
-    <div class="info-box">
-      <h3>💡 使い方</h3>
-      <ol>
-        <li>回答者を追加すると、その人専用のURLが生成されます</li>
-        <li>URLをコピーして回答者に共有してください</li>
-        <li>回答者はそのURLにアクセスすることでクイズに参加できます</li>
-        <li>URLパラメータに回答者名が含まれているため、ログイン不要です</li>
-      </ol>
-    </div>
+      <div class="info-box">
+        <h3>💡 使い方</h3>
+        <ol>
+          <li>回答者を追加すると、その人専用のURLが生成されます</li>
+          <li>URLをコピーして回答者に共有してください</li>
+          <li>回答者はそのURLにアクセスすることでクイズに参加できます</li>
+          <li>URLパラメータに回答者名が含まれているため、ログイン不要です</li>
+        </ol>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -146,6 +201,12 @@ const activeUsers = ref(users.value.filter(u => !u.isDeleted))
   border-radius: 8px;
   padding: 2rem;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.loading-state {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
 }
 
 .header {

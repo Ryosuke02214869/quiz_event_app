@@ -1,5 +1,14 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import type { Question, UserResponses } from '../../types'
+import {
+  getQuestions,
+  getUserByName,
+  createUser,
+  saveResponse,
+  getUserResponses,
+  subscribeToQuestions
+} from '../../supabase/database'
 
 interface Props {
   userName: string
@@ -10,29 +19,63 @@ const emit = defineEmits<{
   finish: []
 }>()
 
-// TODO: Firebaseから問題データを取得
+const questions = ref<Question[]>([])
+const userResponses = ref<Record<string, { selectedAnswer: number; isCorrect: boolean }>>({})
+const loading = ref(true)
 const currentQuestionIndex = ref(0)
 const selectedAnswer = ref<number | null>(null)
 const isAnswered = ref(false)
 const showConfirmModal = ref(false)
 const showHistoryModal = ref(false)
+const userId = ref<string>('')
 
-// ダミーデータ
-const questions = ref([
-  {
-    id: '1',
-    text: 'サンプル問題: Vue.jsの開発元は？',
-    images: [],
-    options: [
-      { text: 'Google', image: null },
-      { text: 'Facebook', image: null },
-      { text: 'Evan You', image: null },
-      { text: 'Microsoft', image: null }
-    ],
-    correctAnswer: 2,
-    showCorrectAnswer: true
+let unsubscribe: (() => void) | null = null
+
+onMounted(async () => {
+  try {
+    // ユーザーを取得または作成
+    let user = await getUserByName(props.userName)
+    if (!user) {
+      user = await createUser(props.userName)
+    }
+    userId.value = user.id
+
+    // 問題を取得（有効な問題のみ）
+    const allQuestions = await getQuestions()
+    questions.value = allQuestions.filter(q => q.isActive && !q.isDeleted)
+
+    // 既存の回答を取得
+    const responses = await getUserResponses(userId.value)
+    const responsesMap: Record<string, { selectedAnswer: number; isCorrect: boolean }> = {}
+    responses.forEach((resp: any) => {
+      responsesMap[resp.question_id] = {
+        selectedAnswer: resp.selected_answer,
+        isCorrect: resp.is_correct
+      }
+    })
+    userResponses.value = responsesMap
+
+    // リアルタイム購読（問題が追加・変更された場合）
+    unsubscribe = subscribeToQuestions(async (updatedQuestions) => {
+      questions.value = updatedQuestions.filter(q => q.isActive && !q.isDeleted)
+    })
+
+    // 回答済みの問題があれば次の未回答問題に移動
+    const firstUnanswered = questions.value.findIndex(q => !userResponses.value[q.id])
+    if (firstUnanswered !== -1) {
+      currentQuestionIndex.value = firstUnanswered
+    }
+  } catch (e: any) {
+    console.error('Error loading quiz data:', e)
+    alert(`エラー: ${e.message}`)
+  } finally {
+    loading.value = false
   }
-])
+})
+
+onUnmounted(() => {
+  if (unsubscribe) unsubscribe()
+})
 
 const currentQuestion = computed(() => questions.value[currentQuestionIndex.value])
 const totalQuestions = computed(() => questions.value.length)
@@ -52,10 +95,30 @@ const confirmAnswer = () => {
   showConfirmModal.value = true
 }
 
-const submitAnswer = () => {
-  // TODO: Firebaseに回答を保存
-  isAnswered.value = true
-  showConfirmModal.value = false
+const submitAnswer = async () => {
+  if (selectedAnswer.value === null) return
+
+  try {
+    const question = currentQuestion.value
+    await saveResponse(
+      userId.value,
+      question.id,
+      selectedAnswer.value,
+      question.correctAnswer
+    )
+
+    // ローカルに回答を保存
+    userResponses.value[question.id] = {
+      selectedAnswer: selectedAnswer.value,
+      isCorrect: selectedAnswer.value === question.correctAnswer
+    }
+
+    isAnswered.value = true
+    showConfirmModal.value = false
+  } catch (e: any) {
+    console.error('Error submitting answer:', e)
+    alert(`エラー: ${e.message}`)
+  }
 }
 
 const nextQuestion = () => {

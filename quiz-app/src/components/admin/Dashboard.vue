@@ -1,10 +1,41 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import type { UserStats } from '../../types'
+import { getUserStats, subscribeToUsers, subscribeToResponses } from '../../supabase/database'
 
 const users = ref<UserStats[]>([])
+const loading = ref(true)
 const sortBy = ref<'correctCount' | 'accuracy' | 'name'>('correctCount')
 const sortOrder = ref<'asc' | 'desc'>('desc')
+
+let unsubscribeUsers: (() => void) | null = null
+let unsubscribeResponses: (() => void) | null = null
+
+onMounted(async () => {
+  try {
+    // 初回データ取得
+    users.value = await getUserStats()
+
+    // リアルタイム購読 - ユーザーまたは回答が変更されたら統計を再計算
+    unsubscribeUsers = subscribeToUsers(async () => {
+      users.value = await getUserStats()
+    })
+
+    unsubscribeResponses = subscribeToResponses(async () => {
+      users.value = await getUserStats()
+    })
+  } catch (e: any) {
+    console.error('Error loading dashboard data:', e)
+    alert(`エラー: ${e.message}`)
+  } finally {
+    loading.value = false
+  }
+})
+
+onUnmounted(() => {
+  if (unsubscribeUsers) unsubscribeUsers()
+  if (unsubscribeResponses) unsubscribeResponses()
+})
 
 const sortedUsers = computed(() => {
   const sorted = [...users.value].sort((a, b) => {
@@ -50,12 +81,17 @@ const formatDateTime = (dateString: string | null) => {
 
 <template>
   <div class="dashboard">
-    <div class="dashboard-header">
-      <h2>ダッシュボード</h2>
-      <p class="subtitle">回答者の正解数と進捗状況をリアルタイムで確認</p>
+    <div v-if="loading" class="loading-state">
+      <p>読み込み中...</p>
     </div>
 
-    <div class="stats-summary">
+    <template v-else>
+      <div class="dashboard-header">
+        <h2>ダッシュボード</h2>
+        <p class="subtitle">回答者の正解数と進捗状況をリアルタイムで確認</p>
+      </div>
+
+      <div class="stats-summary">
       <div class="stat-card">
         <div class="stat-icon">👥</div>
         <div class="stat-info">
@@ -158,6 +194,7 @@ const formatDateTime = (dateString: string | null) => {
         </tbody>
       </table>
     </div>
+    </template>
   </div>
 </template>
 
@@ -167,6 +204,12 @@ const formatDateTime = (dateString: string | null) => {
   border-radius: 8px;
   padding: 2rem;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.loading-state {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
 }
 
 .dashboard-header {

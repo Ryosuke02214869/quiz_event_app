@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
+import { getQuizMode, subscribeToQuizMode } from '../../supabase/database'
 
 const emit = defineEmits<{
   start: []
@@ -7,19 +8,36 @@ const emit = defineEmits<{
 
 const dots = ref('...')
 let interval: number
+let unsubscribe: (() => void) | null = null
 
-onMounted(() => {
+onMounted(async () => {
   // ローディングアニメーション
   interval = setInterval(() => {
     dots.value = dots.value.length >= 3 ? '.' : dots.value + '.'
   }, 500)
 
-  // TODO: Firebaseのクイズモード状態を監視
-  // クイズが開始されたら自動的にemit('start')を呼ぶ
+  try {
+    // 初回データ取得
+    const quizMode = await getQuizMode()
+    if (quizMode.isActive) {
+      emit('start')
+      return
+    }
+
+    // クイズモード状態をリアルタイム監視
+    unsubscribe = subscribeToQuizMode((mode) => {
+      if (mode.isActive) {
+        emit('start')
+      }
+    })
+  } catch (e: any) {
+    console.error('Error loading quiz mode:', e)
+  }
 })
 
 onUnmounted(() => {
   if (interval) clearInterval(interval)
+  if (unsubscribe) unsubscribe()
 })
 </script>
 

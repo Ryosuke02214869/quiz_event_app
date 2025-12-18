@@ -16,9 +16,9 @@
 - 複数人が同時に回答可能
 
 ### 1-3. 技術スタック
-- フロントエンド: Vue 3
-- バックエンド: Firebase Realtime Database
-- ストレージ: Firebase Storage
+- フロントエンド: Vue 3 + TypeScript
+- バックエンド: Supabase (PostgreSQL)
+- ストレージ: Supabase Storage
 - 認証方式: URLパラメータによる簡易管理（ログイン機能なし）
 
 ### 1-4. ユーザー種別
@@ -248,99 +248,87 @@
 
 ## 3. データ構造
 
-### 3-1. Firebase Realtime Database
+### 3-1. Supabase Database (PostgreSQL)
 
-#### 3-1-1. questions（問題データ）
+#### 3-1-1. questions（問題テーブル）
+```sql
+CREATE TABLE questions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  order_num INTEGER NOT NULL,
+  text TEXT NOT NULL,
+  images TEXT[] DEFAULT '{}',
+  options JSONB NOT NULL,
+  correct_answer INTEGER NOT NULL,
+  show_correct_answer BOOLEAN DEFAULT true,
+  is_active BOOLEAN DEFAULT false,
+  is_deleted BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+**options JSONB例:**
 ```json
-{
-  "questions": {
-    "question1": {
-      "id": "question1",
-      "order": 1,
-      "text": "問題文",
-      "images": [
-        "https://storage.googleapis.com/...",
-        "https://storage.googleapis.com/..."
-      ],
-      "options": [
-        {
-          "text": "選択肢1",
-          "image": "https://storage.googleapis.com/..."
-        },
-        {
-          "text": "選択肢2",
-          "image": null
-        }
-      ],
-      "correctAnswer": 0,
-      "showCorrectAnswer": true,
-      "isActive": true,
-      "isDeleted": false,
-      "createdAt": "2025-01-01T00:00:00Z",
-      "updatedAt": "2025-01-01T00:00:00Z"
-    }
+[
+  {
+    "text": "選択肢1",
+    "image": "https://supabase.storage/..."
+  },
+  {
+    "text": "選択肢2",
+    "image": null
   }
-}
+]
 ```
 
-#### 3-1-2. quizMode（クイズモード状態）
-```json
-{
-  "quizMode": {
-    "isActive": false,
-    "startedAt": null,
-    "endedAt": null
-  }
-}
+#### 3-1-2. quiz_mode（クイズモード状態テーブル）
+```sql
+CREATE TABLE quiz_mode (
+  id INTEGER PRIMARY KEY DEFAULT 1,
+  is_active BOOLEAN DEFAULT false,
+  started_at TIMESTAMP WITH TIME ZONE,
+  ended_at TIMESTAMP WITH TIME ZONE,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  CONSTRAINT single_row CHECK (id = 1)
+);
 ```
 
-#### 3-1-3. users（回答者データ）
-```json
-{
-  "users": {
-    "user1": {
-      "id": "user1",
-      "name": "山田太郎",
-      "isDeleted": false,
-      "createdAt": "2025-01-01T00:00:00Z"
-    }
-  }
-}
+#### 3-1-3. users（回答者テーブル）
+```sql
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL UNIQUE,
+  is_deleted BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 ```
 
-#### 3-1-4. responses（回答データ）
-```json
-{
-  "responses": {
-    "user1": {
-      "question1": {
-        "selectedAnswer": 0,
-        "isCorrect": true,
-        "answeredAt": "2025-01-01T00:00:00Z"
-      },
-      "question2": {
-        "selectedAnswer": 2,
-        "isCorrect": false,
-        "answeredAt": "2025-01-01T00:01:00Z"
-      }
-    }
-  }
-}
+#### 3-1-4. responses（回答テーブル）
+```sql
+CREATE TABLE responses (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES users(id),
+  question_id UUID NOT NULL REFERENCES questions(id),
+  selected_answer INTEGER NOT NULL,
+  is_correct BOOLEAN NOT NULL,
+  answered_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id, question_id)
+);
 ```
 
-### 3-2. Firebase Storage
+### 3-2. Supabase Storage
 
-#### ディレクトリ構造
+#### バケット構造
 ```
-/quiz-images
+quiz-images (Public Bucket)
   /questions
     /{questionId}
       /main
-        /image1.jpg
-        /image2.jpg
+        /{timestamp}-image1.jpg
+        /{timestamp}-image2.jpg
       /options
-        /option1.jpg
-        /option2.jpg
+        /{timestamp}-option1.jpg
+        /{timestamp}-option2.jpg
 ```
 
 ---
@@ -454,10 +442,11 @@
 
 ## 6. 制約事項
 
-### 6-1. Firebase無料枠
-- ストレージ: 5GB
-- ダウンロード: 1GB/日
-- Realtime Database: 1GBストレージ、10GB/月転送量
+### 6-1. Supabase無料枠
+- データベース: 500MB
+- ストレージ: 1GB
+- 帯域幅: 5GB/月（データベース + ストレージ）
+- 同時接続: 500 (Auto-pause after 1 week of inactivity)
 
 ### 6-2. 機能制約
 - ログイン機能なし
@@ -465,8 +454,9 @@
 - 問題の削除は論理削除のみ
 
 ### 6-3. 運用制約
-- イベント終了後はFirebaseプロジェクトを削除推奨
+- イベント終了後はSupabaseプロジェクトを削除推奨
 - 同時接続は100名程度を想定
+- 画像は5MB以下に制限
 
 ---
 
@@ -498,5 +488,6 @@
 
 ## 9. 参考資料
 
-- Firebase公式ドキュメント: https://firebase.google.com/docs
+- Supabase公式ドキュメント: https://supabase.com/docs
 - Vue 3公式ドキュメント: https://vuejs.org/
+- TypeScript公式ドキュメント: https://www.typescriptlang.org/docs/

@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import {
+  getUserByName,
+  getQuestions,
+  getUserResponses
+} from '../../supabase/database'
 
 interface Props {
   userName: string
@@ -7,21 +12,68 @@ interface Props {
 
 const props = defineProps<Props>()
 
-// TODO: Firebaseから回答結果を取得
+const loading = ref(true)
 const results = ref({
   correctCount: 0,
-  totalQuestions: 1,
-  answers: [
-    {
-      questionId: '1',
-      questionText: 'サンプル問題: Vue.jsの開発元は？',
-      selectedAnswer: 2,
-      correctAnswer: 2,
-      isCorrect: true,
-      selectedOptionText: 'Evan You',
-      correctOptionText: 'Evan You'
+  totalQuestions: 0,
+  answers: [] as Array<{
+    questionId: string
+    questionText: string
+    selectedAnswer: number
+    correctAnswer: number
+    isCorrect: boolean
+    selectedOptionText: string
+    correctOptionText: string
+  }>
+})
+
+onMounted(async () => {
+  try {
+    // ユーザーを取得
+    const user = await getUserByName(props.userName)
+    if (!user) {
+      alert('ユーザーが見つかりません')
+      return
     }
-  ]
+
+    // 問題と回答を取得
+    const allQuestions = await getQuestions()
+    const activeQuestions = allQuestions.filter(q => q.isActive && !q.isDeleted)
+    const responses = await getUserResponses(user.id)
+
+    // 回答結果を構築
+    const answers = []
+    let correctCount = 0
+
+    for (const question of activeQuestions) {
+      const response = responses.find((r: any) => r.question_id === question.id)
+      if (response) {
+        const isCorrect = response.is_correct
+        if (isCorrect) correctCount++
+
+        answers.push({
+          questionId: question.id,
+          questionText: question.text,
+          selectedAnswer: response.selected_answer,
+          correctAnswer: question.correctAnswer,
+          isCorrect,
+          selectedOptionText: question.options[response.selected_answer]?.text || '',
+          correctOptionText: question.options[question.correctAnswer]?.text || ''
+        })
+      }
+    }
+
+    results.value = {
+      correctCount,
+      totalQuestions: activeQuestions.length,
+      answers
+    }
+  } catch (e: any) {
+    console.error('Error loading results:', e)
+    alert(`エラー: ${e.message}`)
+  } finally {
+    loading.value = false
+  }
 })
 
 const accuracy = computed(() => {
