@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import type { User } from '../../types'
 import {
   createUser,
@@ -8,12 +8,16 @@ import {
   deleteUser as deleteUserDB,
   subscribeToUsers
 } from '../../supabase/database'
+import QRCode from 'qrcode'
 
 const users = ref<User[]>([])
 const loading = ref(true)
 const newUserName = ref('')
 const showAddForm = ref(false)
 const adding = ref(false)
+const showQRModal = ref(false)
+const qrUser = ref<User | null>(null)
+const qrCodeDataUrl = ref('')
 
 let unsubscribe: (() => void) | null = null
 
@@ -99,6 +103,50 @@ const copyUrl = (user: User) => {
     alert('URLのコピーに失敗しました')
   })
 }
+
+const showQRCode = async (user: User) => {
+  try {
+    const url = getUserUrl(user.name)
+    const dataUrl = await QRCode.toDataURL(url, {
+      width: 300,
+      margin: 2,
+      color: {
+        dark: '#000000',
+        light: '#ffffff'
+      }
+    })
+    qrCodeDataUrl.value = dataUrl
+    qrUser.value = user
+    showQRModal.value = true
+  } catch (error) {
+    console.error('QRコード生成エラー:', error)
+    alert('QRコードの生成に失敗しました')
+  }
+}
+
+const closeQRModal = () => {
+  showQRModal.value = false
+  qrUser.value = null
+  qrCodeDataUrl.value = ''
+}
+
+const downloadQRCode = () => {
+  if (!qrUser.value || !qrCodeDataUrl.value) return
+
+  const link = document.createElement('a')
+  link.download = `QR_${qrUser.value.name}.png`
+  link.href = qrCodeDataUrl.value
+  link.click()
+}
+
+// モーダル表示時に背景のスクロールを無効化
+watch(showQRModal, (isOpen) => {
+  if (isOpen) {
+    document.body.style.overflow = 'hidden'
+  } else {
+    document.body.style.overflow = ''
+  }
+})
 </script>
 
 <template>
@@ -183,6 +231,12 @@ const copyUrl = (user: User) => {
 
           <div class="user-actions">
             <button
+              class="btn-qr"
+              @click="showQRCode(user)"
+            >
+              QRコード
+            </button>
+            <button
               class="btn-delete"
               @click="deleteUser(user)"
             >
@@ -203,6 +257,41 @@ const copyUrl = (user: User) => {
         </ol>
       </div>
     </template>
+
+    <!-- QRコードモーダル -->
+    <div v-if="showQRModal && qrUser" class="modal-overlay" @click="closeQRModal">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>{{ qrUser.name }} さんのQRコード</h3>
+          <button class="btn-close-modal" @click="closeQRModal">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="qr-container">
+            <img :src="qrCodeDataUrl" alt="QRコード" class="qr-image">
+          </div>
+
+          <div class="qr-info">
+            <p class="qr-description">
+              このQRコードをスキャンすると、{{ qrUser.name }} さん専用のクイズページにアクセスできます。
+            </p>
+            <div class="qr-url">
+              <label>URL:</label>
+              <div class="url-text">{{ getUserUrl(qrUser.name) }}</div>
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button class="btn-download" @click="downloadQRCode">
+              画像をダウンロード
+            </button>
+            <button class="btn-secondary" @click="closeQRModal">
+              閉じる
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -419,6 +508,22 @@ const copyUrl = (user: User) => {
 .user-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.btn-qr {
+  background: #9c27b0;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.btn-qr:hover {
+  background: #7b1fa2;
 }
 
 .btn-delete {
@@ -456,5 +561,169 @@ const copyUrl = (user: User) => {
 
 .info-box li {
   margin: 0.5rem 0;
+}
+
+/* モーダル */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  animation: fadeIn 0.2s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.3s;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #2c3e50;
+}
+
+.btn-close-modal {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: #f0f0f0;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: #666;
+  transition: all 0.2s;
+}
+
+.btn-close-modal:hover {
+  background: #e0e0e0;
+  color: #333;
+}
+
+.modal-body {
+  padding: 2rem;
+}
+
+.qr-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f9f9f9;
+  border-radius: 8px;
+}
+
+.qr-image {
+  width: 300px;
+  height: 300px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+}
+
+.qr-info {
+  margin-bottom: 1.5rem;
+}
+
+.qr-description {
+  margin: 0 0 1rem;
+  color: #666;
+  line-height: 1.6;
+}
+
+.qr-url {
+  background: #f9f9f9;
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.qr-url label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #666;
+}
+
+.url-text {
+  padding: 0.5rem;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-family: monospace;
+  word-break: break-all;
+  color: #2c3e50;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.btn-download {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-download:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(14, 165, 233, 0.4);
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
 }
 </style>

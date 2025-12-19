@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import type { Question } from '../../types'
 import { getQuestions, toggleQuestionActive, deleteQuestion as deleteQuestionDB, updateQuestion, subscribeToQuestions } from '../../supabase/database'
 
@@ -119,6 +119,15 @@ const closePreview = () => {
   showPreviewModal.value = false
   previewQuestion.value = null
 }
+
+// モーダル表示時に背景のスクロールを無効化
+watch(showPreviewModal, (isOpen) => {
+  if (isOpen) {
+    document.body.style.overflow = 'hidden'
+  } else {
+    document.body.style.overflow = ''
+  }
+})
 </script>
 
 <template>
