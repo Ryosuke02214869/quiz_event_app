@@ -226,44 +226,49 @@ const closePreview = () => {
     <div v-if="showPreviewModal && previewQuestion" class="modal-overlay" @click="closePreview">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
-          <h3>問題プレビュー</h3>
+          <h3>問題プレビュー（スマホ表示）</h3>
           <button class="btn-close-modal" @click="closePreview">✕</button>
         </div>
 
-        <div class="preview-container">
-          <!-- 問題文 -->
-          <div class="preview-question-text">
-            {{ previewQuestion.text }}
-          </div>
-
-          <!-- 問題画像 -->
-          <div v-if="previewQuestion.images.length > 0" class="preview-images">
-            <img
-              v-for="(image, index) in previewQuestion.images"
-              :key="index"
-              :src="image"
-              alt="問題画像"
-              class="preview-image"
-            >
-          </div>
-
-          <!-- 選択肢 -->
-          <div class="preview-options">
-            <div
-              v-for="(option, index) in previewQuestion.options"
-              :key="index"
-              class="preview-option"
-              :class="{ correct: index === previewQuestion.correctAnswer }"
-            >
-              <div class="preview-option-content">
-                <div class="preview-option-number">{{ String.fromCharCode(65 + index) }}</div>
-                <div class="preview-option-text">{{ option.text }}</div>
+        <!-- スマホ風コンテナ -->
+        <div class="phone-container">
+          <div class="phone-screen">
+            <div class="preview-container">
+              <!-- 問題文 -->
+              <div class="preview-question-text">
+                {{ previewQuestion.text }}
               </div>
-              <div v-if="option.image" class="preview-option-image">
-                <img :src="option.image" alt="選択肢画像">
+
+              <!-- 問題画像 -->
+              <div v-if="previewQuestion.images.length > 0" class="preview-images">
+                <img
+                  v-for="(image, index) in previewQuestion.images"
+                  :key="index"
+                  :src="image"
+                  alt="問題画像"
+                  class="preview-image"
+                >
               </div>
-              <div v-if="index === previewQuestion.correctAnswer" class="correct-badge">
-                ✓ 正解
+
+              <!-- 選択肢（2x2グリッド） -->
+              <div class="preview-options">
+                <div
+                  v-for="(option, index) in previewQuestion.options"
+                  :key="index"
+                  class="preview-option"
+                  :class="{ correct: index === previewQuestion.correctAnswer }"
+                >
+                  <div class="preview-option-content">
+                    <div class="preview-option-number">{{ String.fromCharCode(65 + index) }}</div>
+                    <div class="preview-option-text">{{ option.text }}</div>
+                  </div>
+                  <div v-if="option.image" class="preview-option-image">
+                    <img :src="option.image" alt="選択肢画像">
+                  </div>
+                  <div v-if="index === previewQuestion.correctAnswer" class="correct-badge">
+                    ✓ 正解
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -527,10 +532,10 @@ input:checked + .slider:before {
 .modal-content {
   background: white;
   border-radius: 12px;
-  max-width: 800px;
+  max-width: 500px;
   width: 100%;
   max-height: 90vh;
-  overflow-y: auto;
+  overflow: hidden;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   animation: slideUp 0.3s;
 }
@@ -581,17 +586,39 @@ input:checked + .slider:before {
   color: #333;
 }
 
-.preview-container {
+/* スマホ風コンテナ */
+.phone-container {
+  display: flex;
+  justify-content: center;
   padding: 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.phone-screen {
+  width: 100%;
+  max-width: 375px;
+  background: white;
+  border-radius: 30px;
+  box-shadow:
+    0 0 0 8px #1a1a1a,
+    0 0 0 10px #2a2a2a,
+    0 20px 60px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.preview-container {
+  padding: 1.5rem;
 }
 
 .preview-question-text {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 600;
   color: #2c3e50;
   line-height: 1.6;
-  margin-bottom: 1.5rem;
-  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+  padding: 1.25rem;
   background: #f8f9fa;
   border-radius: 8px;
   border-left: 4px solid #0ea5e9;
@@ -611,18 +638,22 @@ input:checked + .slider:before {
 }
 
 .preview-options {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
 }
 
 .preview-option {
-  padding: 1.25rem;
+  padding: 1rem;
   background: white;
   border: 2px solid #e0e0e0;
   border-radius: 8px;
   transition: all 0.2s;
   position: relative;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .preview-option.correct {
@@ -633,13 +664,13 @@ input:checked + .slider:before {
 .preview-option-content {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
 }
 
 .preview-option-number {
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   background: #0ea5e9;
   color: white;
   border-radius: 50%;
@@ -647,7 +678,7 @@ input:checked + .slider:before {
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
 }
 
 .preview-option.correct .preview-option-number {
@@ -656,9 +687,10 @@ input:checked + .slider:before {
 
 .preview-option-text {
   flex: 1;
-  font-size: 1rem;
+  font-size: 0.9rem;
   color: #2c3e50;
-  line-height: 1.5;
+  line-height: 1.4;
+  word-break: break-word;
 }
 
 .preview-option-image {
@@ -674,13 +706,13 @@ input:checked + .slider:before {
 
 .correct-badge {
   position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  padding: 0.25rem 0.75rem;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.2rem 0.5rem;
   background: #4caf50;
   color: white;
-  border-radius: 12px;
-  font-size: 0.85rem;
+  border-radius: 8px;
+  font-size: 0.7rem;
   font-weight: 600;
 }
 </style>
