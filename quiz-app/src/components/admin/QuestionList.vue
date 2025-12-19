@@ -10,6 +10,8 @@ const emit = defineEmits<{
 const questions = ref<Question[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
+const showPreviewModal = ref(false)
+const previewQuestion = ref<Question | null>(null)
 
 let unsubscribe: (() => void) | null = null
 
@@ -89,6 +91,16 @@ const moveDown = async (index: number) => {
     }
   }
 }
+
+const openPreview = (question: Question) => {
+  previewQuestion.value = question
+  showPreviewModal.value = true
+}
+
+const closePreview = () => {
+  showPreviewModal.value = false
+  previewQuestion.value = null
+}
 </script>
 
 <template>
@@ -154,14 +166,25 @@ const moveDown = async (index: number) => {
             </button>
           </div>
 
-          <label class="toggle-switch">
-            <input
-              type="checkbox"
-              :checked="question.isActive"
-              @change="toggleActive(question)"
-            >
-            <span class="slider"></span>
-          </label>
+          <div class="toggle-container">
+            <label class="toggle-label">有効/無効</label>
+            <label class="toggle-switch">
+              <input
+                type="checkbox"
+                :checked="question.isActive"
+                @change="toggleActive(question)"
+              >
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <button
+            type="button"
+            class="btn-preview"
+            @click="openPreview(question)"
+          >
+            プレビュー
+          </button>
 
           <button
             type="button"
@@ -178,6 +201,55 @@ const moveDown = async (index: number) => {
           >
             削除
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- プレビューモーダル -->
+    <div v-if="showPreviewModal && previewQuestion" class="modal-overlay" @click="closePreview">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>問題プレビュー</h3>
+          <button class="btn-close-modal" @click="closePreview">✕</button>
+        </div>
+
+        <div class="preview-container">
+          <!-- 問題文 -->
+          <div class="preview-question-text">
+            {{ previewQuestion.text }}
+          </div>
+
+          <!-- 問題画像 -->
+          <div v-if="previewQuestion.images.length > 0" class="preview-images">
+            <img
+              v-for="(image, index) in previewQuestion.images"
+              :key="index"
+              :src="image"
+              alt="問題画像"
+              class="preview-image"
+            >
+          </div>
+
+          <!-- 選択肢 -->
+          <div class="preview-options">
+            <div
+              v-for="(option, index) in previewQuestion.options"
+              :key="index"
+              class="preview-option"
+              :class="{ correct: index === previewQuestion.correctAnswer }"
+            >
+              <div class="preview-option-content">
+                <div class="preview-option-number">{{ String.fromCharCode(65 + index) }}</div>
+                <div class="preview-option-text">{{ option.text }}</div>
+              </div>
+              <div v-if="option.image" class="preview-option-image">
+                <img :src="option.image" alt="選択肢画像">
+              </div>
+              <div v-if="index === previewQuestion.correctAnswer" class="correct-badge">
+                ✓ 正解
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -326,6 +398,19 @@ const moveDown = async (index: number) => {
   cursor: not-allowed;
 }
 
+.toggle-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.toggle-label {
+  font-size: 0.75rem;
+  color: #666;
+  white-space: nowrap;
+}
+
 .toggle-switch {
   position: relative;
   display: inline-block;
@@ -371,6 +456,7 @@ input:checked + .slider:before {
   transform: translateX(26px);
 }
 
+.btn-preview,
 .btn-edit,
 .btn-delete {
   padding: 0.5rem 1rem;
@@ -379,6 +465,15 @@ input:checked + .slider:before {
   cursor: pointer;
   font-size: 0.9rem;
   transition: all 0.2s;
+}
+
+.btn-preview {
+  background: #14b8a6;
+  color: white;
+}
+
+.btn-preview:hover {
+  background: #0d9488;
 }
 
 .btn-edit {
@@ -397,5 +492,183 @@ input:checked + .slider:before {
 
 .btn-delete:hover {
   background: #d32f2f;
+}
+
+/* モーダル */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  animation: fadeIn 0.2s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.3s;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 2px solid #e0e0e0;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 1;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #2c3e50;
+}
+
+.btn-close-modal {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: #f0f0f0;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: #666;
+  transition: all 0.2s;
+}
+
+.btn-close-modal:hover {
+  background: #e0e0e0;
+  color: #333;
+}
+
+.preview-container {
+  padding: 2rem;
+}
+
+.preview-question-text {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2c3e50;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #0ea5e9;
+}
+
+.preview-images {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.preview-image {
+  width: 100%;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.preview-options {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.preview-option {
+  padding: 1.25rem;
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.preview-option.correct {
+  border-color: #4caf50;
+  background: #f1f8f4;
+}
+
+.preview-option-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.preview-option-number {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  background: #0ea5e9;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.95rem;
+}
+
+.preview-option.correct .preview-option-number {
+  background: #4caf50;
+}
+
+.preview-option-text {
+  flex: 1;
+  font-size: 1rem;
+  color: #2c3e50;
+  line-height: 1.5;
+}
+
+.preview-option-image {
+  margin-top: 1rem;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.preview-option-image img {
+  width: 100%;
+  display: block;
+}
+
+.correct-badge {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  background: #4caf50;
+  color: white;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 </style>

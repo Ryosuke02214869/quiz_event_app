@@ -194,7 +194,6 @@ input, textarea, select {
   font-size: var(--text-body);
   line-height: var(--leading-normal);
   color: var(--text-primary);
-  background-color: var(--bg-primary);
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-md);
   transition: all var(--transition-fast);
