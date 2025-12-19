@@ -43,7 +43,10 @@ const toggleActive = async (question: Question) => {
     // 即座にローカルの状態を更新
     const questionIndex = questions.value.findIndex(q => q.id === question.id)
     if (questionIndex !== -1) {
-      questions.value[questionIndex].isActive = !questions.value[questionIndex].isActive
+      const targetQuestion = questions.value[questionIndex]
+      if (targetQuestion) {
+        targetQuestion.isActive = !targetQuestion.isActive
+      }
     }
 
     // データベースを更新
@@ -52,7 +55,10 @@ const toggleActive = async (question: Question) => {
     // エラーが発生した場合、状態を元に戻す
     const questionIndex = questions.value.findIndex(q => q.id === question.id)
     if (questionIndex !== -1) {
-      questions.value[questionIndex].isActive = !questions.value[questionIndex].isActive
+      const targetQuestion = questions.value[questionIndex]
+      if (targetQuestion) {
+        targetQuestion.isActive = !targetQuestion.isActive
+      }
     }
     alert(`エラー: ${e.message}`)
     console.error('Error toggling question:', e)
