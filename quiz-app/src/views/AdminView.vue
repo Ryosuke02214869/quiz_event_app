@@ -54,7 +54,6 @@ const activeTab = ref<'questions' | 'control' | 'dashboard' | 'users'>('question
 <style scoped>
 .admin-view {
   min-height: 100vh;
-  min-width: 1024px;
   background: #f5f5f5;
 }
 
@@ -113,5 +112,63 @@ const activeTab = ref<'questions' | 'control' | 'dashboard' | 'users'>('question
   padding: 2rem;
   max-width: 1200px;
   margin: 0 auto;
+}
+
+/* タブレット対応 (768px以下) */
+@media (max-width: 768px) {
+  .admin-header {
+    padding: 1.5rem 1rem;
+  }
+
+  .admin-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .subtitle {
+    font-size: 0.9rem;
+  }
+
+  .admin-nav {
+    overflow-x: auto;
+    justify-content: flex-start;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .admin-nav button {
+    flex: 0 0 auto;
+    min-width: 120px;
+    max-width: none;
+    padding: 1rem 1.5rem;
+    font-size: 0.9rem;
+  }
+
+  .admin-content {
+    padding: 1rem;
+  }
+}
+
+/* モバイル対応 (480px以下) */
+@media (max-width: 480px) {
+  .admin-header {
+    padding: 1rem;
+  }
+
+  .admin-header h1 {
+    font-size: 1.25rem;
+  }
+
+  .subtitle {
+    font-size: 0.85rem;
+  }
+
+  .admin-nav button {
+    min-width: 100px;
+    padding: 0.875rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .admin-content {
+    padding: 0.75rem;
+  }
 }
 </style>

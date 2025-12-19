@@ -726,4 +726,147 @@ watch(showQRModal, (isOpen) => {
 .btn-secondary:hover {
   background: #5a6268;
 }
+
+/* タブレット対応 (768px以下) */
+@media (max-width: 768px) {
+  .user-management {
+    padding: 1.5rem;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .btn-add {
+    width: 100%;
+  }
+
+  .users-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .input-group {
+    flex-direction: column;
+  }
+
+  .input-group input {
+    width: 100%;
+  }
+
+  .btn-primary {
+    width: 100%;
+  }
+}
+
+/* モバイル対応 (480px以下) */
+@media (max-width: 480px) {
+  .user-management {
+    padding: 1rem;
+    border-radius: 0;
+  }
+
+  .header h2 {
+    font-size: 1.5rem;
+  }
+
+  .subtitle {
+    font-size: 0.85rem;
+  }
+
+  .user-card {
+    padding: 1rem;
+  }
+
+  .user-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.25rem;
+  }
+
+  .user-name {
+    font-size: 1rem;
+  }
+
+  .user-meta {
+    font-size: 0.75rem;
+  }
+
+  .url-display {
+    flex-direction: column;
+  }
+
+  .url-display input {
+    font-size: 0.75rem;
+  }
+
+  .btn-copy {
+    width: 100%;
+  }
+
+  .user-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .btn-qr,
+  .btn-delete {
+    width: 100%;
+  }
+
+  .add-form {
+    padding: 1rem;
+  }
+
+  .info-box {
+    padding: 1rem;
+  }
+
+  .info-box h3 {
+    font-size: 1rem;
+  }
+
+  .info-box li {
+    font-size: 0.85rem;
+  }
+
+  .modal-content {
+    max-width: 100%;
+    margin: 0;
+    border-radius: 0;
+    max-height: 100vh;
+  }
+
+  .modal-header h3 {
+    font-size: 1.1rem;
+  }
+
+  .modal-body {
+    padding: 1.5rem;
+  }
+
+  .qr-image {
+    width: 250px;
+    height: 250px;
+  }
+
+  .qr-description {
+    font-size: 0.9rem;
+  }
+
+  .btn-download,
+  .btn-secondary {
+    padding: 0.675rem 1.25rem;
+    font-size: 0.9rem;
+  }
+
+  .modal-actions {
+    flex-direction: column;
+  }
+
+  .modal-actions button {
+    width: 100%;
+  }
+}
 </style>

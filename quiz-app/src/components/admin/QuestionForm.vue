@@ -491,4 +491,69 @@ const handleSubmit = async () => {
 .btn-secondary:hover {
   background: #d0d0d0;
 }
+
+/* タブレット対応 (768px以下) */
+@media (max-width: 768px) {
+  .question-form {
+    padding: 1.5rem;
+  }
+
+  .form-title {
+    font-size: 1.5rem;
+  }
+
+  .options-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+  }
+}
+
+/* モバイル対応 (480px以下) */
+@media (max-width: 480px) {
+  .question-form {
+    padding: 1rem;
+    border-radius: 0;
+  }
+
+  .form-title {
+    font-size: 1.25rem;
+  }
+
+  label {
+    font-size: 0.9rem;
+  }
+
+  input,
+  textarea,
+  select {
+    font-size: 0.95rem;
+    padding: 0.65rem;
+  }
+
+  .option-card {
+    padding: 1rem;
+  }
+
+  .option-header {
+    font-size: 0.9rem;
+  }
+
+  .image-preview {
+    max-height: 150px;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    padding: 0.675rem 1.25rem;
+    font-size: 0.95rem;
+  }
+}
 </style>
