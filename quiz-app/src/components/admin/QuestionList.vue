@@ -40,8 +40,26 @@ onUnmounted(() => {
 
 const toggleActive = async (question: Question) => {
   try {
+    // 即座にローカルの状態を更新
+    const questionIndex = questions.value.findIndex(q => q.id === question.id)
+    if (questionIndex !== -1) {
+      const targetQuestion = questions.value[questionIndex]
+      if (targetQuestion) {
+        targetQuestion.isActive = !targetQuestion.isActive
+      }
+    }
+
+    // データベースを更新
     await toggleQuestionActive(question.id, !question.isActive)
   } catch (e: any) {
+    // エラーが発生した場合、状態を元に戻す
+    const questionIndex = questions.value.findIndex(q => q.id === question.id)
+    if (questionIndex !== -1) {
+      const targetQuestion = questions.value[questionIndex]
+      if (targetQuestion) {
+        targetQuestion.isActive = !targetQuestion.isActive
+      }
+    }
     alert(`エラー: ${e.message}`)
     console.error('Error toggling question:', e)
   }
@@ -123,7 +141,6 @@ const closePreview = () => {
         v-for="(question, index) in questions.filter(q => !q.isDeleted)"
         :key="question.id"
         class="question-item"
-        :class="{ inactive: !question.isActive }"
       >
         <div class="question-number">
           {{ index + 1 }}
@@ -305,11 +322,6 @@ const closePreview = () => {
   align-items: center;
   gap: 1rem;
   transition: all 0.3s;
-}
-
-.question-item.inactive {
-  opacity: 0.6;
-  background: #f9f9f9;
 }
 
 .question-number {
