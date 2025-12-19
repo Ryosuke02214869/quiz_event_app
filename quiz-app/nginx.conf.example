@@ -1,0 +1,26 @@
+# Nginxサーバー設定例
+# このファイルは参考用です。実際の環境に合わせて調整してください。
+
+server {
+    listen 80;
+    server_name your-domain.com;
+    root /path/to/quiz-app/dist;
+    index index.html;
+
+    # SPAのフォールバック設定
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # 静的ファイルのキャッシュ設定
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # gzip圧縮
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml+rss application/json application/javascript;
+}

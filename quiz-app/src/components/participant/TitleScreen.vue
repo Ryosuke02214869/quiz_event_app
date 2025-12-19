@@ -7,7 +7,7 @@ const emit = defineEmits<{
 }>()
 
 const dots = ref('...')
-let interval: number
+let interval: ReturnType<typeof setInterval>
 let unsubscribe: (() => void) | null = null
 
 onMounted(async () => {
