@@ -724,4 +724,113 @@ input:checked + .slider:before {
   font-size: 0.7rem;
   font-weight: 600;
 }
+
+/* タブレット対応 (768px以下) */
+@media (max-width: 768px) {
+  .question-item {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1rem;
+  }
+
+  .question-number {
+    margin-bottom: 0.75rem;
+  }
+
+  .question-content {
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+
+  .question-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .order-buttons {
+    flex-direction: row;
+    gap: 0.5rem;
+  }
+
+  .toggle-container {
+    flex-direction: row;
+    gap: 0.5rem;
+  }
+
+  .btn-preview,
+  .btn-edit,
+  .btn-delete {
+    flex: 1;
+    min-width: 80px;
+  }
+}
+
+/* モバイル対応 (480px以下) */
+@media (max-width: 480px) {
+  .question-item {
+    padding: 0.875rem;
+  }
+
+  .question-number {
+    width: 32px;
+    height: 32px;
+    font-size: 0.95rem;
+  }
+
+  .question-text {
+    font-size: 0.9rem;
+  }
+
+  .badge {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.6rem;
+  }
+
+  .btn-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 0.9rem;
+  }
+
+  .toggle-label {
+    font-size: 0.7rem;
+  }
+
+  .toggle-switch {
+    width: 45px;
+    height: 22px;
+  }
+
+  .slider:before {
+    height: 16px;
+    width: 16px;
+  }
+
+  input:checked + .slider:before {
+    transform: translateX(23px);
+  }
+
+  .btn-preview,
+  .btn-edit,
+  .btn-delete {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .modal-content {
+    max-width: 100%;
+    margin: 0;
+    border-radius: 0;
+    max-height: 100vh;
+  }
+
+  .phone-container {
+    padding: 1rem;
+  }
+
+  .phone-screen {
+    max-height: 80vh;
+  }
+}
 </style>

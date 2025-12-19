@@ -85,4 +85,38 @@ const handleSave = () => {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
 }
+
+/* タブレット対応 (768px以下) */
+@media (max-width: 768px) {
+  .question-management {
+    padding: 1.5rem;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .btn-primary {
+    width: 100%;
+  }
+}
+
+/* モバイル対応 (480px以下) */
+@media (max-width: 480px) {
+  .question-management {
+    padding: 1rem;
+    border-radius: 0;
+  }
+
+  .header h2 {
+    font-size: 1.5rem;
+  }
+
+  .btn-primary {
+    padding: 0.675rem 1.25rem;
+    font-size: 0.95rem;
+  }
+}
 </style>

@@ -448,4 +448,79 @@ input:checked + .slider:before {
   font-size: 0.9rem;
   opacity: 0.9;
 }
+
+/* タブレット対応 (768px以下) */
+@media (max-width: 768px) {
+  .quiz-mode-control {
+    padding: 1.5rem;
+  }
+
+  .control-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .toggle-container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* モバイル対応 (480px以下) */
+@media (max-width: 480px) {
+  .quiz-mode-control {
+    padding: 1rem;
+    border-radius: 0;
+  }
+
+  .control-header h2 {
+    font-size: 1.25rem;
+  }
+
+  .subtitle {
+    font-size: 0.85rem;
+  }
+
+  .control-panel {
+    padding: 1.25rem;
+  }
+
+  .status-badge {
+    padding: 0.375rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .toggle-label {
+    font-size: 0.9rem;
+  }
+
+  .toggle-switch {
+    width: 50px;
+    height: 26px;
+  }
+
+  .slider:before {
+    height: 20px;
+    width: 20px;
+  }
+
+  input:checked + .slider:before {
+    transform: translateX(24px);
+  }
+
+  .stat-card {
+    padding: 1rem;
+  }
+
+  .stat-value {
+    font-size: 2rem;
+  }
+
+  .stat-label {
+    font-size: 0.85rem;
+  }
+}
 </style>
